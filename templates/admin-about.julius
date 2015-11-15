@@ -1,0 +1,10 @@
+function submitPost() {
+    $.ajax({
+        url: "@{AdminAboutR}",
+        method: "POST",
+        data: $('form##{rawJS formId}').serialize(),
+        success: function() {
+            window.location = "@{AdminHomeR}";
+        }
+    });
+}

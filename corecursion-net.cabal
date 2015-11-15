@@ -1,0 +1,123 @@
+name:              corecursion-net
+version:           0.0.0
+cabal-version:     >= 1.10
+build-type:        Simple
+
+Flag dev
+    Description:   Turn on development settings, like auto-reload templates.
+    Default:       False
+
+Flag library-only
+    Description:   Build for use with "yesod devel"
+    Default:       False
+
+library
+    hs-source-dirs: ., app
+    exposed-modules: Application
+                     Foundation
+                     Import
+                     Import.NoFoundation
+                     Model
+                     Repository
+                     Settings
+                     Settings.StaticFiles
+                     Store
+                     Handler.Admin
+                     Handler.Common
+                     Handler.Home
+                     Handler.Post
+
+    if flag(dev) || flag(library-only)
+        cpp-options:   -DDEVELOPMENT
+        ghc-options:   -Wall -fwarn-tabs -O0
+    else
+        ghc-options:   -Wall -fwarn-tabs -O2
+
+    default-extensions: TemplateHaskell
+                        QuasiQuotes
+                        OverloadedStrings
+                        NoImplicitPrelude
+                        CPP
+                        MultiParamTypeClasses
+                        TypeFamilies
+                        GADTs
+                        GeneralizedNewtypeDeriving
+                        FlexibleContexts
+                        EmptyDataDecls
+                        NoMonomorphismRestriction
+                        DeriveDataTypeable
+                        ViewPatterns
+                        TupleSections
+                        RecordWildCards
+
+    build-depends: base                          >= 4          && < 5
+                 , yesod
+                 , yesod-core
+                 , yesod-auth
+                 , yesod-static
+                 , yesod-form
+                 , classy-prelude
+                 , classy-prelude-conduit
+                 , classy-prelude-yesod
+                 , bytestring
+                 , text
+                 , persistent
+                 , persistent-template
+                 , template-haskell
+                 , shakespeare
+                 , hjsmin
+                 , monad-control
+                 , wai-extra
+                 , yaml
+                 , http-conduit
+                 , directory
+                 , warp
+                 , data-default
+                 , aeson
+                 , conduit
+                 , monad-logger
+                 , fast-logger
+                 , wai-logger
+                 , file-embed
+                 , safe
+                 , unordered-containers
+                 , containers
+                 , vector
+                 , time
+                 , eventstore == 0.9.0.0
+                 , uuid
+                 , stm
+                 , pandoc
+                 , containers
+                 , highlighting-kate
+                 , mtl
+                 , attoparsec
+                 , blaze-html
+                 , pwstore-fast
+
+    default-language: Haskell2010
+
+executable         corecursion-net
+    if flag(library-only)
+        Buildable: False
+
+    main-is:           main.hs
+    hs-source-dirs:    app
+    build-depends:     base, corecursion-net
+
+    ghc-options:       -threaded -O2 -rtsopts -with-rtsopts=-N
+    default-language:  Haskell2010
+
+Test-Suite bootstrap
+  Type:             exitcode-stdio-1.0
+  hs-source-dirs:   bootstrap
+  Main-Is:          main.hs
+  default-language: Haskell2010
+
+  Build-Depends:    base,
+                    eventstore,
+                    aeson,
+                    text,
+                    time,
+                    pwstore-fast,
+                    bytestring

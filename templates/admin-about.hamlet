@@ -1,0 +1,6 @@
+<h1>About page
+<form ##{formId} method="post" action="@{AdminAboutR}">
+  <div class="form-group">
+    <label for="contact-content">Content
+    <textarea name="about-content" .form-control rows="40">#{content}
+  <button type="button" onclick="submitPost();" class="btn btn-default">Update

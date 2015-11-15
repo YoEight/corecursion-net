@@ -1,0 +1,55 @@
+<span class="dropup">
+  <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" id="post-action" aria-expanded="false">
+    Actions
+    <span class="caret">
+  <ul class="dropdown-menu" aria-labelledby="post-action">
+    <li>
+      <a href="#" onclick="showDeleteModal();">Delete
+    <li>
+      <a href="#" onclick="showPublishModal();">Publish
+    <li>
+      <a href="#" onclick="showUnpublishModal();">Unpublish
+    <li>
+      <a href="@{AdminPreviewPostR postid}">Preview
+
+<div ##{deleteModalId} class="modal fade">
+  <div .modal-dialog>
+    <div .modal-content>
+      <div .modal-header>
+        <button type="button" .close data-dismiss="modal" arial-label="Close">
+          <span arial-hidden="true">&times;
+        <h4 .modal-title>Confirm
+      <div .modal-body>
+        <p>Delete that post for sure ?
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close
+        <button type="button" class="btn btn-primary" onclick="deletePost();">Delete
+
+<div ##{publishModalId} class="modal fade">
+  <div .modal-dialog>
+    <div .modal-content>
+      <div .modal-header>
+        <button type="button" .close data-dismiss="modal" arial-label="Close">
+          <span arial-hidden="true">&times;
+        <h4 .modal-title>Confirm
+      <div .modal-body>
+        <p>Publish that post for sure ?
+        <div .form-group>
+          <label for="post-date">Forced date</label>
+          <input ##{postDateId} name="post-date" type="text" class="form-control" placeholder="ex. 2012-06-07">
+      <div .modal-footer>
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close
+        <button type="button" class="btn btn-primary" onclick="publishPost();">Publish
+
+<div ##{unpublishModalId} class="modal fade">
+  <div .modal-dialog>
+    <div .modal-content>
+      <div .modal-header>
+        <button type="button" .close data-dismiss="modal" arial-label="Close">
+          <span arial-hidden="true">&times;
+        <h4 .modal-title>Confirm
+      <div .modal-body>
+        <p>Unpublish that post for sure ?
+      <div .modal-footer>
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close
+        <button type="button" class="btn btn-primary" onclick="unpublishPost();">Unpublish

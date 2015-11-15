@@ -1,0 +1,57 @@
+function submitPost() {
+    $.ajax({
+        url: "@{AdminPostR postid}",
+        method: "POST",
+        data: $('form##{rawJS formId}').serialize(),
+        success: function() {
+            window.location = "@{AdminHomeR}";
+        }
+    });
+}
+
+function showDeleteModal() {
+    $('##{rawJS deleteModalId}').modal('show');
+}
+
+function showPublishModal() {
+    $('##{rawJS publishModalId}').modal('show');
+}
+
+function showUnpublishModal() {
+    $('##{rawJS unpublishModalId}').modal('show');
+}
+
+function deletePost() {
+    $.ajax({
+        url: "@{AdminPostR postid}",
+        method: "DELETE"
+    }).done(function(){
+        window.location = "@{AdminHomeR}";
+    });
+}
+
+function publishPost() {
+    var date = $('##{rawJS postDateId}').val();
+    var data = "";
+
+    if (date != "") {
+        data = "post-date=" + date;
+    }
+
+    $.ajax({
+        url: "@{AdminPublishPostR postid}",
+        method: "PUT",
+        data: data
+    }).done(function(){
+        window.location = "@{AdminHomeR}";
+    });
+}
+
+function unpublishPost() {
+    $.ajax({
+        url: "@{AdminUnpublishPostR postid}",
+        method: "PUT"
+    }).done(function(){
+        window.location = "@{AdminHomeR}";
+    });
+}

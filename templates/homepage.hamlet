@@ -1,0 +1,14 @@
+<div .row>
+  <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+    $forall (pid, p) <- posts
+      <div .post-preview>
+        <a href=@{PostR pid}>
+          <h2 .post-title>
+            #{ _postTitle $ _post p }
+            <small>
+              #{ showDate p }
+          <h3 .post-subtitle>#{ _postSummary $ _post p }
+        <div .post-meta>
+          $forall tag <- _postTags $ _post p
+            <a href="#">#{tag}
+      <hr>

@@ -1,0 +1,19 @@
+<h1>#{actionTitle}
+<form ##{formId} method="post">
+  <div .form-group>
+    <label for="post-title">Title
+    <input name="post-title" type="text" .form-control placeholder="Title" value="#{title}">
+  <div .form-group>
+    <label for="post-tags">Tags
+    <input name="post-tags" type="text" .form-control placeholder="Tags" value="#{tags}">
+  <div .form-group>
+    <label for="post-summary">Summary</label>
+    <textarea name="post-summary" .form-control rows="5">
+      #{summary}
+  <div class="form-group">
+    <label for="post-content">Content
+    <textarea name="post-content" .form-control rows="25">#{content}
+  <input type="hidden" name="post-id" value="${post-id}" />
+  <button type="button" onclick="submitPost();" class="btn btn-default">
+    #{actionLabel}
+  ^{pageBody pc}

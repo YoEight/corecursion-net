@@ -1,0 +1,7 @@
+<div .page-header>
+  <h1>
+    #{ _postTitle $ _post p }
+    <small>
+      #{ showDate p }
+  <div .post-content>
+    ^{ _postHtml p }

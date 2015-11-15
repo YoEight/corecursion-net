@@ -1,0 +1,20 @@
+Default: &defaults
+  database: corecursion-net.sqlite3
+  poolsize: 10
+
+Development:
+  <<: *defaults
+
+Testing:
+  database: corecursion-net_test.sqlite3
+  <<: *defaults
+
+Staging:
+  database: corecursion-net_staging.sqlite3
+  poolsize: 100
+  <<: *defaults
+
+Production:
+  database: corecursion-net_production.sqlite3
+  poolsize: 100
+  <<: *defaults

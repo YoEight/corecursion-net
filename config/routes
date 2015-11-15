@@ -1,0 +1,17 @@
+/static StaticR Static appStatic
+/auth   AuthR   Auth   getAuth
+
+/favicon.ico FaviconR GET
+/robots.txt RobotsR GET
+
+/ HomeR GET
+/post/#PostId PostR GET
+/about AboutR GET
+
+/admin AdminHomeR GET
+/admin/post AdminCreatePostR GET POST
+/admin/post/#PostId AdminPostR GET POST DELETE
+/admin/post/publish/#PostId AdminPublishPostR PUT
+/admin/post/unpublish/#PostId AdminUnpublishPostR PUT
+/admin/post/preview/#PostId AdminPreviewPostR GET
+/admin/about AdminAboutR GET POST

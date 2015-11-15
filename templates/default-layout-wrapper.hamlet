@@ -1,0 +1,67 @@
+$newline never
+\<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+
+    <title>#{pageTitle pc}
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+
+    ^{pageHead pc}
+
+  <body>
+    <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+      <div class="container-fluid">
+        <div class="navbar-header page-scroll">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+            <span class="sr-only">Toggle navigation
+            <span class="icon-bar">
+            <span class="icon-bar">
+            <span class="icon-bar">
+          <a class="navbar-brand" href="/">Home
+
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+          <ul class="nav navbar-nav navbar-right">
+            <li>
+              <a href="@{AboutR}">About
+            $if isJust muser
+              <li>
+                <a href="@{AdminHomeR}">Admin
+            $else
+              <li>
+                <a href="@{AuthR LoginR}">Login
+
+
+    <header class="intro-header" style="background-image: url('@{StaticR img_home_bg_jpg}')">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+            <div class="site-heading">
+              <h1>Corecursion
+              <hr class="small">
+              <span class="subheading">My peaceful travel towards functional programming enlightment.
+
+    <div class="container">
+      ^{pageBody pc}
+
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <ul class="list-inline text-center">
+                        <li>
+                            <a href="http://twitter.com/yoeight">
+                                <span class="fa-stack fa-lg">
+                                    <i class="fa fa-circle fa-stack-2x">
+                                    <i class="fa fa-twitter fa-stack-1x fa-inverse">
+                        <li>
+                            <a href="http://github.com/YoEight">
+                                <span class="fa-stack fa-lg">
+                                    <i class="fa fa-circle fa-stack-2x">
+                                    <i class="fa fa-github fa-stack-1x fa-inverse">
+                    <p class="copyright text-muted">Copyright &copy; Yorick Laupa 2015

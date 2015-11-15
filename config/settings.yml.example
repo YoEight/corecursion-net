@@ -1,0 +1,27 @@
+# Values formatted like "_env:ENV_VAR_NAME:default_value" can be overridden by the specified environment variable.
+# See https://github.com/yesodweb/yesod/wiki/Configuration#overriding-configuration-values-with-environment-variables
+
+static-dir:     "_env:STATIC_DIR:static"
+host:           "_env:HOST:*4" # any IPv4 host
+port:           "_env:PORT:3000"
+approot:        "_env:APPROOT:http://localhost:3000"
+ip-from-header: "_env:IP_FROM_HEADER:false"
+
+# Optional values with the following production defaults.
+# In development, they default to the inverse.
+#
+# development: false
+# detailed-logging: false
+# should-log-all: false
+# reload-templates: false
+# mutable-static: false
+# skip-combining: false
+
+eventstore:
+  login   : "_env:EVENTSTORE_LOGIN:database_login"
+  password: "_env:EVENTSTORE_PASSW:database_password"
+  ip      : "_env:EVENTSTORE_IP:1.2.3.4"
+  port    : "_env:EVENTSTORE_PORT:1234"
+
+copyright: Insert copyright statement here
+#analytics: UA-YOURCODE

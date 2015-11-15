@@ -1,0 +1,29 @@
+$newline never
+\<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>#{pageTitle pc}
+
+    ^{pageHead pc}
+  <body>
+    <div id="wrapper">
+      <div id="sidebar-wrapper">
+        <ul class="sidebar-nav">
+          <li class="sidebar-brand">
+            <a href="@{AdminHomeR}">Home
+          <li class="sidebar-brand">
+            <a href="@{HomeR}">Public Home
+          <li>
+            <a href="@{AdminCreatePostR}">Create post</a>
+          <li>
+            <a href="@{AdminAboutR}">About page
+
+      <div id="page-content-wrapper">
+        <div class="container-fluid">
+          ^{pageBody pc}
