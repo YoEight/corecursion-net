@@ -5,7 +5,7 @@
 /robots.txt RobotsR GET
 
 / HomeR GET
-/post/#PostId PostR GET
+/post/#Text PostR GET
 /about AboutR GET
 
 /admin AdminHomeR GET

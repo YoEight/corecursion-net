@@ -14,3 +14,4 @@ cabal.sandbox.config
 *.swp
 *~
 settings.yml
+.stack-work/

@@ -2,8 +2,10 @@
 module Handler.Common where
 
 --------------------------------------------------------------------------------
+import qualified Data.IntMap as I
 import qualified Data.Map.Strict as M
 import           Data.FileEmbed (embedFile)
+import           Data.Hashable
 import           Data.UUID
 
 --------------------------------------------------------------------------------
@@ -63,7 +65,7 @@ postPreview postid = do
             Just p  ->
                 let doc  = readContentMarkdown $ _postContent p
                     html = getHtml doc in
-                return $ Just $ PublishedPost date html p
+                return $ Just $ PublishedPost date html p (permanentLink p)
 
 -----------------------------------------------------------------------------
 isPublishedF :: Handler (PostId -> Bool)
@@ -71,7 +73,13 @@ isPublishedF = do
     app <- getYesod
     liftIO $ do
         rep <- readTVarIO $ _var $ appRep app
-        return (\postid -> M.member postid $ _pubs rep)
+        return $ \postid ->
+            case M.lookup postid $ _posts rep of
+                Nothing -> False
+                Just p  ->
+                    let lnk = permanentLink p
+                        pid = hash lnk in
+                    I.member pid $ _pubs rep
 
 -----------------------------------------------------------------------------
 getPosts :: Handler [(PostId, Post)]
@@ -82,21 +90,21 @@ getPosts = do
         return $ M.assocs $ _posts dat
 
 ------------------------------------------------------------------------------
-publishedPosts :: Handler [(PostId, PublishedPost)]
+publishedPosts :: Handler [PublishedPost]
 publishedPosts  = do
     app <- getYesod
-    xs  <- liftIO $ fmap (M.assocs . _pubs) $ readTVarIO $ _var $ appRep app
+    xs  <- liftIO $ fmap (I.elems . _pubs) $ readTVarIO $ _var $ appRep app
     return $ reverse $ sortBy go xs
   where
-    go (_,l) (_,r) = compare (_postDate l) (_postDate r)
+    go l r = compare (_postDate l) (_postDate r)
 
 --------------------------------------------------------------------------------
-publishedPost :: PostId -> Handler (Maybe PublishedPost)
-publishedPost pid = do
+publishedPost :: Text -> Handler (Maybe PublishedPost)
+publishedPost lnk = do
     app <- getYesod
     liftIO $ atomically $ do
         rep <- readTVar (_var $ appRep app)
-        return $ M.lookup pid $ _pubs rep
+        return $ I.lookup (hash lnk) $ _pubs rep
 
 --------------------------------------------------------------------------------
 aboutPageText :: Handler Text

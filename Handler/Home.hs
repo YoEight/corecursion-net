@@ -1,9 +1,6 @@
 module Handler.Home where
 
 --------------------------------------------------------------------------------
--- import Yesod.Form.Bootstrap3 (BootstrapFormLayout (..), renderBootstrap3,
---                               withSmallInput)
-
 import Import
 import Handler.Common
 import Repository
@@ -23,8 +20,3 @@ getAboutR = do
     defaultLayout $ do
         setTitle "About"
         $(widgetFile "about")
-
--- sampleForm :: Form (FileInfo, Text)
--- sampleForm = renderBootstrap3 BootstrapBasicForm $ (,)
---     <$> fileAFormReq "Choose a file"
---     <*> areq textField (withSmallInput "What's on the file?") Nothing

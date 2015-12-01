@@ -7,7 +7,7 @@ import Import
 import Repository
 
 --------------------------------------------------------------------------------
-getPostR :: PostId -> Handler Html
+getPostR :: Text -> Handler Html
 getPostR pid = do
     pm <- publishedPost pid
     case pm of

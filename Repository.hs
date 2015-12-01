@@ -13,8 +13,11 @@ import Data.Maybe
 -----------------------------------------------------------------------------
 import           Database.EventStore
 import           Data.Aeson
-import qualified Data.Map.Strict       as M
+import           Data.Hashable
+import qualified Data.IntMap as I
+import qualified Data.Map.Strict as M
 import           Data.Text (Text, pack, unpack)
+import qualified Data.Text as T
 import           Data.Time
 import           Data.UUID (UUID, toString)
 import           Data.UUID.V4
@@ -47,6 +50,7 @@ data PublishedPost =
     { _postDate  :: !UTCTime
     , _postHtml  :: !Html
     , _post      :: !Post
+    , _postLink  :: !Text -- permanent link.
     }
 
 -----------------------------------------------------------------------------
@@ -66,7 +70,7 @@ data User =
 type Posts = M.Map PostId Post
 
 -----------------------------------------------------------------------------
-type PublishedPosts = M.Map PostId PublishedPost
+type PublishedPosts = I.IntMap PublishedPost
 
 -----------------------------------------------------------------------------
 type Users = M.Map UserId User
@@ -84,7 +88,7 @@ data Internal =
 
 -----------------------------------------------------------------------------
 emptyInternal :: Internal
-emptyInternal = Internal M.empty M.empty M.empty mempty mempty
+emptyInternal = Internal M.empty I.empty M.empty mempty mempty
 
 -----------------------------------------------------------------------------
 -- | Exposed as the entry point to access or update posts.
@@ -124,6 +128,13 @@ syntaxHighlightingCss :: String
 syntaxHighlightingCss = styleToCss haddock
 
 -----------------------------------------------------------------------------
+permanentLink :: Post -> Text
+permanentLink = T.map go . _postTitle
+  where
+    go ' ' = '_'
+    go x   = x
+
+-----------------------------------------------------------------------------
 newRepository :: Connection -> IO Repository
 newRepository conn = do
     repo  <- streamFold conn "posts" content emptyInternal
@@ -140,16 +151,22 @@ newRepository conn = do
                 p <- M.lookup postid $ _posts rep
                 let doc   = readContentMarkdown $ _postContent p
                     nodes = writeHtml writerOpts doc
-                    ppost = PublishedPost date nodes p
-                    rep'  = rep { _pubs = M.insert postid ppost $ _pubs rep }
+                    lnk   = permanentLink p
+                    ppost = PublishedPost date nodes p (permanentLink p)
+                    pid   = hash lnk
+                    rep'  = rep { _pubs = I.insert pid ppost $ _pubs rep }
                 return rep' in
         return $ fromMaybe rep action
     content rep (PostDeleted postid) _ = do
         let rep' = rep { _posts = M.delete postid $ _posts rep }
         return rep'
     content rep (PostUnpublished postid) _ = do
-        let rep' = rep { _pubs = M.delete postid $ _pubs rep }
-        return rep'
+        res <- forM (M.lookup postid $ _posts rep) $ \p -> do
+            let lnk  = permanentLink p
+                pid  = hash lnk
+                rep' = rep { _pubs = I.delete pid $ _pubs rep }
+            return rep'
+        return $ fromMaybe rep res
     content rep (AboutUpdated c) _ = do
         let doc  = readContentMarkdown c
             html = writeHtml writerOpts doc
@@ -256,8 +273,10 @@ handleContentCommand Repository{..} (PublishPost forcedDate postid) = do
             Just p  -> do
                 let doc   = readContentMarkdown $ _postContent p
                     nodes = writeHtml writerOpts doc
-                    ppost = PublishedPost date nodes p
-                    rep'  = rep { _pubs = M.insert postid ppost $ _pubs rep }
+                    lnk   = permanentLink p
+                    pid   = hash lnk
+                    ppost = PublishedPost date nodes p lnk
+                    rep'  = rep { _pubs = I.insert pid ppost $ _pubs rep }
                 writeTVar _var rep'
                 return True
     when done $ do
@@ -286,10 +305,12 @@ handleContentCommand Repository{..} (DeletePost postid) = do
 handleContentCommand Repository{..} (UnpublishPost postid) = do
     done <- atomically $ do
         rep <- readTVar _var
-        case M.lookup postid $ _pubs rep of
+        case M.lookup postid $ _posts rep of
             Nothing -> return False
-            Just _  -> do
-                let rep' = rep { _pubs = M.delete postid $ _pubs rep }
+            Just p  -> do
+                let lnk  = permanentLink p
+                    pid  = hash lnk
+                    rep' = rep { _pubs = I.delete pid $ _pubs rep }
                 writeTVar _var rep'
                 return True
     when done $ do
