@@ -95,6 +95,7 @@ library
                  , blaze-html
                  , pwstore-fast
                  , hashable
+                 , multimap
 
     default-language: Haskell2010
 
@@ -114,8 +115,6 @@ Test-Suite bootstrap
   hs-source-dirs:   bootstrap
   Main-Is:          main.hs
   default-language: Haskell2010
-
-  Buildable: True
 
   Build-Depends:    base,
                     eventstore,

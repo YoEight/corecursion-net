@@ -8,6 +8,7 @@ module Repository where
 import Prelude
 import Control.Concurrent.STM
 import Control.Monad
+import Data.Foldable
 import Data.Maybe
 
 -----------------------------------------------------------------------------
@@ -16,6 +17,7 @@ import           Data.Aeson
 import           Data.Hashable
 import qualified Data.IntMap as I
 import qualified Data.Map.Strict as M
+import qualified Data.SetMap as S
 import           Data.Text (Text, pack, unpack)
 import qualified Data.Text as T
 import           Data.Time
@@ -73,6 +75,9 @@ type Posts = M.Map PostId Post
 type PublishedPosts = I.IntMap PublishedPost
 
 -----------------------------------------------------------------------------
+type Tagged = S.SetMap Text Int
+
+-----------------------------------------------------------------------------
 type Users = M.Map UserId User
 
 -----------------------------------------------------------------------------
@@ -84,11 +89,12 @@ data Internal =
     , _usrs      :: !Users
     , _about     :: !Html
     , _aboutText :: !Text
+    , _tagged    :: !Tagged
     }
 
 -----------------------------------------------------------------------------
 emptyInternal :: Internal
-emptyInternal = Internal M.empty I.empty M.empty mempty mempty
+emptyInternal = Internal M.empty I.empty M.empty mempty mempty S.empty
 
 -----------------------------------------------------------------------------
 -- | Exposed as the entry point to access or update posts.
@@ -135,11 +141,21 @@ permanentLink = T.map go . _postTitle
     go x   = x
 
 -----------------------------------------------------------------------------
+populateTaggedPosts :: Internal -> Internal
+populateTaggedPosts s@Internal{..} = s { _tagged = foldl' go _tagged as }
+  where
+    as = I.assocs _pubs
+
+    go set (pid, pub) =
+        let tags = _postTags $ _post pub in
+        foldr (\t -> S.insert t pid) set tags
+
+-----------------------------------------------------------------------------
 newRepository :: Connection -> IO Repository
 newRepository conn = do
     repo  <- streamFold conn "posts" content emptyInternal
     repo' <- streamFold conn "authors" users repo
-    var   <- newTVarIO repo'
+    var   <- newTVarIO $ populateTaggedPosts repo'
     return $ Repository conn var
   where
     content rep (PostCreated postid) _ = do

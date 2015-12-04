@@ -4,6 +4,7 @@ module Handler.Common where
 --------------------------------------------------------------------------------
 import qualified Data.IntMap as I
 import qualified Data.Map.Strict as M
+import qualified Data.SetMap as S
 import           Data.FileEmbed (embedFile)
 import           Data.Hashable
 import           Data.UUID
@@ -90,13 +91,15 @@ getPosts = do
         return $ M.assocs $ _posts dat
 
 ------------------------------------------------------------------------------
+comparePubs :: PublishedPost -> PublishedPost -> Ordering
+comparePubs l r = compare (_postDate l) (_postDate r)
+
+------------------------------------------------------------------------------
 publishedPosts :: Handler [PublishedPost]
 publishedPosts  = do
     app <- getYesod
     xs  <- liftIO $ fmap (I.elems . _pubs) $ readTVarIO $ _var $ appRep app
-    return $ reverse $ sortBy go xs
-  where
-    go l r = compare (_postDate l) (_postDate r)
+    return $ reverse $ sortBy comparePubs xs
 
 --------------------------------------------------------------------------------
 publishedPost :: Text -> Handler (Maybe PublishedPost)
@@ -105,6 +108,16 @@ publishedPost lnk = do
     liftIO $ atomically $ do
         rep <- readTVar (_var $ appRep app)
         return $ I.lookup (hash lnk) $ _pubs rep
+
+------------------------------------------------------------------------------
+publishedPostsByTag :: Text -> Handler [PublishedPost]
+publishedPostsByTag tag = do
+    app <- getYesod
+    atomically $ do
+        s   <- readTVar $ _var $ appRep app
+        let set = S.lookup tag $ _tagged s
+            tmp = foldMap (\i -> maybeToList $ I.lookup i $ _pubs s) set
+        return $ reverse $ sortBy comparePubs tmp
 
 --------------------------------------------------------------------------------
 aboutPageText :: Handler Text

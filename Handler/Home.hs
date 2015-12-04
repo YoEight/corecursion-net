@@ -8,7 +8,11 @@ import Repository
 --------------------------------------------------------------------------------
 getHomeR :: Handler Html
 getHomeR = do
-    posts <- publishedPosts
+    tag_m <- lookupGetParam "tag"
+    posts <- case tag_m of
+        Nothing  -> publishedPosts
+        Just tag -> publishedPostsByTag tag
+
     defaultLayout $ do
         setTitle "Home"
         $(widgetFile "homepage")

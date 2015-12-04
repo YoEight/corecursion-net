@@ -10,5 +10,5 @@
           <h3 .post-subtitle>#{ _postSummary $ _post p }
         <div .post-meta>
           $forall tag <- _postTags $ _post p
-            <a href="#">#{tag}
+            <a href="@{HomeR}?tag=#{tag}">#{tag}
       <hr>
