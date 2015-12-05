@@ -1,5 +1,5 @@
 {-# LANGUAGE PackageImports #-}
-import "corecursion-net" Application (develMain)
+import "webapp" Application (develMain)
 import Prelude (IO)
 
 main :: IO ()
