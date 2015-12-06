@@ -3,6 +3,6 @@
     <h2 .form-signin-heading>Please sign in
     <label for=login .sr-only>Login
     <input .form-control placeholder="Login" type=text name=login required autofocus>
-    <labal for=password .sr-only>Password
+    <label for=password .sr-only>Password
     <input .form-control placeholder="Password" type=password name=password required>
     <button .btn .btn-lg .btn-primary .btn-block type=submit>Login

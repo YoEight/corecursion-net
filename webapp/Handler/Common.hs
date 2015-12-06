@@ -134,3 +134,8 @@ aboutPage = do
     liftIO $ atomically $ do
         rep <- readTVar (_var $ appRep app)
         return $ _about rep
+
+--------------------------------------------------------------------------------
+addMeta :: Text -> Text -> WidgetT App IO ()
+addMeta key value =
+    toWidgetHead [hamlet| <meta name=#{key} content=#{value}> |]

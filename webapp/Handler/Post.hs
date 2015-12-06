@@ -15,5 +15,8 @@ getPostR pid = do
         Just p  -> defaultLayout $ do
             toWidget $ CssBuilder $ fromString $ syntaxHighlightingCss
             toWidget $ CssBuilder "code{white-space: pre;}"
+
+            addMeta "description" (_postSummary $ _post p)
+
             setTitle $ toHtml $ _postTitle $ _post p
             $(widgetFile "post")
