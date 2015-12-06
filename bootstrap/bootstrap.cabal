@@ -63,7 +63,8 @@ executable bootstrap
                        text,
                        time,
                        pwstore-fast,
-                       bytestring
+                       bytestring,
+                       optparse-applicative
 
   -- Directories containing source files.
   hs-source-dirs:      lib
