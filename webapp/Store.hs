@@ -1,4 +1,4 @@
-module Store (streamFold) where
+module Store (streamFold, forSub) where
 
 ------------------------------------------------------------------------------
 import Prelude
@@ -9,6 +9,7 @@ import Data.Aeson.Parser (value)
 import Data.Aeson.Types
 import Data.Attoparsec.ByteString (parseOnly)
 import Data.ByteString (ByteString)
+import Data.Foldable (traverse_)
 import Data.Text (Text)
 import Data.Time hiding (parseTime)
 import Database.EventStore
@@ -57,3 +58,16 @@ streamFold conn stream k seed = go 0 seed
                     else go next newS
             ReadNoStream -> return s
             e            -> fail $ "wrong slice read result" ++ show e
+
+-----------------------------------------------------------------------------
+forSub :: FromJSON a
+       => Subscription s
+       -> (a -> Maybe UTCTime -> IO ())
+       -> IO ()
+forSub sub k = forever $ do
+    evt <- nextEvent sub
+    let action = do
+            a    <- resolvedEventDataAsJson evt
+            meta <- recordedEventMetadata $ resolvedEventOriginal evt
+            return (a, parseTime meta)
+    traverse_ (uncurry k) action

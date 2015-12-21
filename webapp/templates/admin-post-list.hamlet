@@ -1,8 +1,8 @@
 <h1>All posts
 <div .list-group>
-  $forall (pid, p) <- posts
+  $forall (pid, p) <- snapshots
     <a href="@{AdminPostR pid}" .list-group-item>
-      #{_postTitle p} #
+      #{ postTitle p } #
       $if isPublished pid
         <span class="label label-default">Published
       \

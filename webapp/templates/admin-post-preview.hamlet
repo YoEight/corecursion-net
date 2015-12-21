@@ -2,10 +2,10 @@
   <a href="@{AdminPostR postid}">Back
 <div .page-header>
   <h1>
-    #{_postTitle $ _post p} #
+    #{ postTitle sp } #
     \ <small>#{date} #
     $if isPublished postid
       <span class="label label-default">Published
     \
   <div .post-content>
-    ^{ _postHtml p}
+    ^{ post_html }

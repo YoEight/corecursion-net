@@ -26,7 +26,9 @@ import Network.Wai.Middleware.RequestLogger (Destination (Logger),
 import System.Log.FastLogger                (defaultBufSize, newStdoutLoggerSet,
                                              toLogStr)
 
-import Repository
+import qualified Aggregate.Posts as Posts
+import qualified Aggregate.Authors as Authors
+
 -- Import all relevant handler modules here.
 -- Don't forget to add new modules to your cabal file!
 import Handler.Admin
@@ -59,8 +61,9 @@ makeFoundation appSettings = do
                 { E.s_credentials = Just cred
                 , E.s_retry       = E.keepRetrying
                 }
-    conn   <- E.connect setts (storeIp conf) (storePort conf)
-    appRep <- newRepository conn
+    conn       <- E.connect setts (storeIp conf) (storePort conf)
+    appPosts   <- Posts.buildPosts conn
+    appAuthors <- Authors.buildAuthors conn
 
     -- Return the foundation
     return App {..}

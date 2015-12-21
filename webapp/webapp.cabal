@@ -14,11 +14,13 @@ Flag library-only
 library
     hs-source-dirs: ., app
     exposed-modules: Application
+                     Aggregate.Authors
+                     Aggregate.Post
+                     Aggregate.Posts
                      Foundation
                      Import
                      Import.NoFoundation
-                     Model
-                     Repository
+                     Render.Html
                      Settings
                      Settings.StaticFiles
                      Store

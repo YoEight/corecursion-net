@@ -7,15 +7,20 @@ import           Text.Cassius
 import           Text.Julius
 
 --------------------------------------------------------------------------------
+import Aggregate.Post
+import Aggregate.Posts
 import Handler.Common
 import Import hiding (parseDate)
-import Repository
 
 --------------------------------------------------------------------------------
 getAdminHomeR :: Handler Html
 getAdminHomeR = do
-    posts       <- getPosts
+    ps          <- getPosts
     isPublished <- isPublishedF
+    snapshots   <- for ps $ \(pid, p) -> do
+        sp <- liftIO $ snapshot p
+        return (pid, sp)
+
     adminLayout $ do
         setTitle "Admin - Home"
         $(widgetFile "admin-post-list")
@@ -27,6 +32,7 @@ getAdminPostR postid = do
     case pm of
         Nothing -> notFound
         Just p  -> do
+            sp <- liftIO $ snapshot p
             let formId = "form-id" :: Text
             pc <- widgetToPageContent $ do
                 deleteModalId    <- newIdent
@@ -40,10 +46,10 @@ getAdminPostR postid = do
                 setTitle "Admin - Update post"
 
                 let actionTitle = "Update post" :: Text
-                    title       = _postTitle p
-                    tags        = unwords $ _postTags p
-                    summary     = _postSummary p
-                    content     = _postContent p
+                    title       = postTitle sp
+                    tags        = unwords $ postTags sp
+                    summary     = postSummary sp
+                    content     = postContent sp
                     actionLabel = "Update" :: Text
 
                 toWidgetHead $ pageHead pc
@@ -73,16 +79,15 @@ postAdminCreatePostR = do
     tg_m <- lookupPostParam "post-tags"
     s_m  <- lookupPostParam "post-summary"
     c_m  <- lookupPostParam "post-content"
-    let tags = maybe [] words tg_m
-        s    = fromMaybe "" s_m
-        c    = maybe "" (T.replace "\r\n" "\n") c_m
-        res  = do
-            t <- t_m
-            return $ CreatePost t c s tags
-    case res of
+    case t_m of
         Nothing  -> invalidArgs []
-        Just cmd -> do
-            executeContentCommand cmd
+        Just t -> do
+            let tags = maybe [] words tg_m
+                s    = fromMaybe "" s_m
+                c    = maybe "" (T.replace "\r\n" "\n") c_m
+
+            app <- getYesod
+            liftIO $ createPost (appPosts app) t c s tags
             sendResponseStatus status201 ()
 
 --------------------------------------------------------------------------------
@@ -92,19 +97,20 @@ postAdminPostR postid = do
     case pm of
         Nothing -> notFound
         Just p  -> do
-            cmds <- extractPostCommands p
+            sp   <- liftIO $ snapshot p
+            cmds <- extractPostCommands sp
             executePostCommands postid cmds
             sendResponseStatus status204 ()
 
 --------------------------------------------------------------------------------
-extractPostCommands :: Post -> Handler [PostCommand]
+extractPostCommands :: PostSnapshot -> Handler [PostCommand]
 extractPostCommands p = titleState
   where
     titleState = do
         tm  <- lookupPostParam "post-title"
         xs <- tagsState
         case tm of
-            Just t | t == _postTitle p -> return xs
+            Just t | t == postTitle p  -> return xs
                    | otherwise         -> return (SetPostTitle t:xs)
             _ -> return xs
 
@@ -114,7 +120,7 @@ extractPostCommands p = titleState
         case tgsm of
             Just tgs ->
                 let ts       = T.words tgs
-                    ps       = _postTags p
+                    ps       = postTags p
                     sameSize = length ts == length ps
                     similar  = all (`elem` ps) ts in
                 if sameSize && similar
@@ -126,7 +132,7 @@ extractPostCommands p = titleState
         sm <- lookupPostParam "post-summary"
         xs <- contentState
         case sm of
-            Just s | s == _postSummary p -> return xs
+            Just s | s == postSummary p -> return xs
                    | otherwise           -> return (SetPostSummary s:xs)
             _ -> return xs
 
@@ -135,7 +141,7 @@ extractPostCommands p = titleState
         case cm of
             Just c ->
                 let c' = T.replace "\r\n" "\n" c in
-                if c' == _postContent p
+                if c' == postContent p
                 then return []
                 else return [SetPostContent c']
             _ -> return []
@@ -146,8 +152,9 @@ deleteAdminPostR postid = do
     pm <- getPost postid
     case pm of
         Nothing -> notFound
-        Just _  -> do
-            executeContentCommand (DeletePost postid)
+        Just p  -> do
+            app <- getYesod
+            liftIO $ deletePost (appPosts app) p
             sendResponseStatus status204 ()
 
 --------------------------------------------------------------------------------
@@ -157,9 +164,10 @@ putAdminPublishPostR postid = do
     pm      <- getPost postid
     case pm of
         Nothing -> notFound
-        Just _  -> do
+        Just p  -> do
             let forcedDate = dateTxt >>= parseDate
-            executeContentCommand (PublishPost forcedDate postid)
+            app <- getYesod
+            liftIO $ publishPost (appPosts app) p forcedDate
             sendResponseStatus status204 ()
 
 --------------------------------------------------------------------------------
@@ -168,20 +176,24 @@ putAdminUnpublishPostR postid = do
     pm <- getPost postid
     case pm of
         Nothing -> notFound
-        Just _  -> do
-            executeContentCommand (UnpublishPost postid)
+        Just p  -> do
+            app <- getYesod
+            liftIO $ unpublishPost (appPosts app) p
             sendResponseStatus status204 ()
 
 --------------------------------------------------------------------------------
 getAdminPreviewPostR :: PostId -> Handler Html
 getAdminPreviewPostR postid = do
-    pm <- postPreview postid
+    pm <- getPost postid
     case pm of
         Nothing -> notFound
         Just p  -> do
             isPublished <- isPublishedF
+            dt          <- liftIO getCurrentTime
             adminLayout $ do
-                let date = showDate p
+                post_html <- liftIO $ renderPost p
+                sp        <- liftIO $ snapshot p
+                let date = showDate dt
                 setTitle "Admin - Post preview"
                 toWidget $(cassiusFile "templates/post.cassius")
                 $(widgetFile "admin-post-preview")
@@ -199,5 +211,5 @@ postAdminAboutR :: Handler TypedContent
 postAdminAboutR = do
     cm <- lookupPostParam "about-content"
     let c = maybe "" (T.replace "\r\n" "\n") cm
-    executeContentCommand (SetAbout c)
+    setAboutContent c
     sendResponseStatus status204 ()

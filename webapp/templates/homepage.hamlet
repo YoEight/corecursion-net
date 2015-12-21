@@ -1,14 +1,14 @@
 <div .row>
   <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-    $forall p <- posts
+    $forall (sp, p) <- zip snapshots pubs
       <div .post-preview>
         <a href=@{PostR $ _postLink p}>
           <h2 .post-title>
-            #{ _postTitle $ _post p }
+            #{ postTitle sp }
             <small>
-              #{ showDate p }
-          <h3 .post-subtitle>#{ _postSummary $ _post p }
+              #{ showDate $ _postDate p }
+          <h3 .post-subtitle>#{ postSummary sp }
         <div .post-meta>
-          $forall tag <- _postTags $ _post p
+          $forall tag <- postTags sp
             <a href="@{HomeR}?tag=#{tag}">#{tag}
       <hr>

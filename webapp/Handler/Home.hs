@@ -1,17 +1,20 @@
 module Handler.Home where
 
 --------------------------------------------------------------------------------
+import Aggregate.Post
+import Aggregate.Posts
 import Import
 import Handler.Common
-import Repository
 
 --------------------------------------------------------------------------------
 getHomeR :: Handler Html
 getHomeR = do
     tag_m <- lookupGetParam "tag"
-    posts <- case tag_m of
+    pubs  <- case tag_m of
         Nothing  -> publishedPosts
         Just tag -> publishedPostsByTag tag
+
+    snapshots <- traverse (liftIO . snapshot . _post) pubs
 
     defaultLayout $ do
         setTitle "Home"

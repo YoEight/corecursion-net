@@ -1,8 +1,9 @@
 module Foundation where
 
-import Crypto.PasswordStore
 import Import.NoFoundation hiding (hash)
-import Repository
+import Aggregate.Authors
+import Aggregate.Post
+import Aggregate.Posts
 import Text.Hamlet          (hamletFile)
 import Text.Jasmine         (minifym)
 import qualified Yesod.Auth.Message as Msg
@@ -17,9 +18,10 @@ import qualified Yesod.Core.Unsafe as Unsafe
 data App = App
     { appSettings    :: AppSettings
     , appStatic      :: Static -- ^ Settings for static file serving.
-    , appRep         :: Repository
     , appHttpManager :: Manager
     , appLogger      :: Logger
+    , appPosts       :: Posts
+    , appAuthors     :: Authors
     }
 
 instance HasHttpManager App where
@@ -116,7 +118,7 @@ instance Yesod App where
     makeLogger = return . appLogger
 
 instance YesodAuth App where
-    type AuthId App = UserId
+    type AuthId App = AuthorId
 
     -- Where to send a user after successful login
     loginDest _ = HomeR
@@ -132,13 +134,14 @@ instance YesodAuth App where
     getAuthId creds = do
         app <- getYesod
         let login = credsIdent creds
-        liftIO $ lookupUserId (appRep app) login
+        liftIO $ lookupAuthorId (appAuthors app) login
 
     maybeAuthId = do
         app  <- getYesod
         skey <- lookupSession credsKey
+        liftIO $ print skey
         case skey of
-            Just key -> liftIO $ lookupUserId (appRep app) key
+            Just key -> liftIO $ lookupAuthorId (appAuthors app) key
             _        -> return Nothing
 
     authHttpManager = getHttpManager
@@ -188,13 +191,12 @@ isAuthenticated = do
 
 --------------------------------------------------------------------------------
 loginUser :: Text -> Text -> Handler Bool
-loginUser l p = do
+loginUser login passw = do
     app  <- getYesod
-    usrm <- liftIO $ lookupUser (appRep app) l
+    usrm <- liftIO $ lookupAuthor (appAuthors app) login
     case usrm of
-        Nothing  -> return False
-        Just (User _ up) -> return $ verifyPassword (encodeUtf8 p)
-                                                    (encodeUtf8 up)
+        Nothing     -> return False
+        Just author -> return $ verifyPassword (appAuthors app) author passw
 
 --------------------------------------------------------------------------------
 unsafeHandler :: App -> Handler a -> IO a
