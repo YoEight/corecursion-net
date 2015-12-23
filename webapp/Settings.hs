@@ -10,6 +10,7 @@ import Control.Exception           (throw)
 import Data.Aeson                  (Object, Result (..),
                                     fromJSON, withObject, (.!=),
                                     (.:?))
+import Data.Aeson.Types            (typeMismatch)
 import Data.Aeson.Types            (Parser)
 import Data.FileEmbed              (embedFile)
 import Data.Yaml                   (decodeEither')
@@ -36,7 +37,21 @@ instance FromJSON EventStoreConf where
                        <*> byteString "password" o
                        <*> o .: "ip"
                        <*> o .: "port"
-    parseJSON _ = mzero
+    parseJSON v = typeMismatch "Invalid EventStore configuration" v
+
+data GoogleAuth =
+    GoogleAuth
+    { googleClientID :: Text
+      -- ^ Google OAuth2 Client ID
+    , googleSecret   :: Text
+      -- ^ Google OAuth2 secret
+    }
+
+instance FromJSON GoogleAuth where
+    parseJSON (Object o) =
+        GoogleAuth <$> o .: "client-id"
+                   <*> o .: "secret"
+    parseJSON v = typeMismatch "Invalid Google OAuth2 configuration" v
 
 -- | Runtime settings to configure this application. These settings can be
 -- loaded from various sources: defaults, environment variables, config files,
@@ -73,6 +88,8 @@ data AppSettings = AppSettings
     -- ^ Google Analytics code
     , appStoreConf              :: EventStoreConf
     -- ^ EventStore configuration
+    , appGoogleAuth             :: GoogleAuth
+    -- ^ Google OAuth configuration
     }
 
 instance FromJSON AppSettings where
@@ -98,6 +115,7 @@ instance FromJSON AppSettings where
         appCopyright              <- o .: "copyright"
         appAnalytics              <- o .:? "analytics"
         appStoreConf              <- o .: "eventstore"
+        appGoogleAuth             <- o .: "google"
 
         return AppSettings {..}
 

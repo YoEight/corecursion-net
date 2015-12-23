@@ -13,4 +13,6 @@ $newline never
 
     <body>
       <div .container>
-      ^{pageBody pc}
+        <a href="@{HomeR}">Back to Corecursion
+      <div .container>
+        ^{pageBody pc}

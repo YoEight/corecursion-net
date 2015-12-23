@@ -1,6 +1,7 @@
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RecordWildCards     #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 --------------------------------------------------------------------------------
 module Aggregate.Authors
     ( Authors
@@ -9,24 +10,21 @@ module Aggregate.Authors
     , buildAuthors
     , lookupAuthor
     , lookupAuthorId
-    , verifyPassword
     ) where
 
 --------------------------------------------------------------------------------
 import Prelude
+import Control.Applicative ((<|>))
 import Control.Concurrent.STM
-import Data.Monoid ((<>))
 import GHC.Generics
 
 --------------------------------------------------------------------------------
 import           ClassyPrelude.Yesod (PathPiece(..))
-import qualified Crypto.PasswordStore as Crypto
 import           Data.Aeson
 import           Data.Aeson.Types
 import qualified Data.HashMap.Strict as H
 import           Data.Hashable
 import           Data.Text
-import           Data.Text.Encoding (encodeUtf8)
 import           Database.EventStore
 
 ------------------------------------------------------------------------------
@@ -36,23 +34,51 @@ import Store
 newtype AuthorId = AuthorId Text deriving (Eq, Ord, Hashable)
 
 -----------------------------------------------------------------------------
-data Author =
-    Author
-    { _login :: !Text
-    , _passw :: !Text
-    } deriving Show
+newtype Email = Email { emailText :: Text } deriving (Show, FromJSON, ToJSON)
+
+-----------------------------------------------------------------------------
+newtype Author = Author { authorEmail :: Email } deriving Show
 
 --------------------------------------------------------------------------------
-data AuthorsEvent = AuthorCreated !Text !Text deriving Generic
+data AuthorsEvent
+    = AuthorCreated !Text !Text
+    | GoogleUserAdded !Email
+    deriving Generic
 
 -----------------------------------------------------------------------------
 instance ToJSON AuthorsEvent where
+    toJSON (AuthorCreated l p) =
+        object [ "login"    .= l
+               , "password" .= p
+               ]
+    toJSON (GoogleUserAdded e) =
+        object [ "action" .= ("new.user" :: Text)
+               , "type"   .= ("google" ::Text)
+               , "email"  .= e
+               ]
+
     toEncoding (AuthorCreated l p) = pairs ("login" .= l <> "password" .= p)
+    toEncoding (GoogleUserAdded e) =
+        pairs ( "action" .= ("new.user" :: Text)
+              <> "type"  .= ("google" :: Text)
+              <> "email" .= e
+              )
 
 --------------------------------------------------------------------------------
 instance FromJSON AuthorsEvent where
-    parseJSON (Object m) =
-        AuthorCreated <$> (m .: "login") <*> (m .: "password")
+    parseJSON (Object m) = parseOldAuthorCreated
+                           <|> parseGoogleUser
+                           <|> invalidParse
+      where
+        parseOldAuthorCreated =
+            AuthorCreated <$> (m .: "login") <*> (m .: "password")
+        parseGoogleUser = do
+            "new.user" :: Text <- m .: "action"
+            "google"   :: Text <- m .: "type"
+            e                  <- m .: "email"
+            return $ GoogleUserAdded e
+        invalidParse =
+            typeMismatch "AuthorEvent: Invalid Object parse" (Object m)
     parseJSON v = typeMismatch "Invalid AuthorEvent" v
 
 ------------------------------------------------------------------------------
@@ -75,8 +101,9 @@ buildAuthors _conn = do
     _var <- newTVarIO m
     return Authors{..}
   where
-    users m (AuthorCreated l p) _ =
-        return $ H.insert (AuthorId l) (Author l p) m
+    users m (AuthorCreated _ _) _ = return m
+    users m (GoogleUserAdded e) _ =
+        let Email l = e in return $ H.insert (AuthorId l) (Author e) m
 
 --------------------------------------------------------------------------------
 lookupAuthor :: Authors -> Text -> IO (Maybe Author)
@@ -87,9 +114,4 @@ lookupAuthor Authors{..} login = atomically $ do
 --------------------------------------------------------------------------------
 lookupAuthorId :: Authors -> Text -> IO (Maybe AuthorId)
 lookupAuthorId as login =
-    fmap (fmap (AuthorId . _login)) $ lookupAuthor as login
-
---------------------------------------------------------------------------------
-verifyPassword :: Authors -> Author -> Text -> Bool
-verifyPassword _ (Author _ cyphered) clear =
-    Crypto.verifyPassword (encodeUtf8 clear) (encodeUtf8 cyphered)
+    fmap (fmap (AuthorId . emailText . authorEmail)) $ lookupAuthor as login

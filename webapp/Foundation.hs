@@ -6,7 +6,7 @@ import Aggregate.Post
 import Aggregate.Posts
 import Text.Hamlet          (hamletFile)
 import Text.Jasmine         (minifym)
-import qualified Yesod.Auth.Message as Msg
+import Yesod.Auth.GoogleEmail2
 import Yesod.Default.Util   (addStaticContentExternal)
 import Yesod.Core.Types     (Logger)
 import qualified Yesod.Core.Unsafe as Unsafe
@@ -127,7 +127,11 @@ instance YesodAuth App where
     -- Override the above two destinations when a Referer: header is present
     redirectToReferer _ = True
 
-    authPlugins _ = [appAuthPlugin]
+    authPlugins app = [authGoogleEmailSaveToken clientID secret]
+      where
+        g        = appGoogleAuth $ appSettings app
+        clientID = googleClientID g
+        secret   = googleSecret g
 
     authLayout = loginLayout
 
@@ -139,7 +143,6 @@ instance YesodAuth App where
     maybeAuthId = do
         app  <- getYesod
         skey <- lookupSession credsKey
-        liftIO $ print skey
         case skey of
             Just key -> liftIO $ lookupAuthorId (appAuthors app) key
             _        -> return Nothing
@@ -156,26 +159,6 @@ loginLayout w = do
         w
     withUrlRenderer $(hamletFile "templates/login-layout.hamlet")
 
-appAuthPlugin :: AuthPlugin App
-appAuthPlugin = AuthPlugin "app-auth" dispatch $ \tm ->
-    $(widgetFile "login")
-  where
-    loginR = PluginR "app-auth" ["login"]
-
-    dispatch "POST" ["login"] = postLoginR >>= sendResponse
-    dispatch _ _ = notFound
-
-postLoginR :: HandlerT Auth (HandlerT App IO) TypedContent
-postLoginR = do
-    (login, passw) <- lift $ runInputPost $ (,)
-                      <$> ireq textField "login"
-                      <*> ireq textField "password"
-    logged <- lift $ loginUser login passw
-    let creds = Creds "username" login []
-    if logged
-        then lift $ setCredsRedirect creds
-        else loginErrorMessageI LoginR Msg.InvalidUsernamePass
-
 -- This instance is required to use forms. You can modify renderMessage to
 -- achieve customized and internationalized form validation messages.
 instance RenderMessage App FormMessage where
@@ -188,15 +171,6 @@ isAuthenticated = do
     case authm of
         Just _ -> return Authorized
         _      -> return AuthenticationRequired
-
---------------------------------------------------------------------------------
-loginUser :: Text -> Text -> Handler Bool
-loginUser login passw = do
-    app  <- getYesod
-    usrm <- liftIO $ lookupAuthor (appAuthors app) login
-    case usrm of
-        Nothing     -> return False
-        Just author -> return $ verifyPassword (appAuthors app) author passw
 
 --------------------------------------------------------------------------------
 unsafeHandler :: App -> Handler a -> IO a

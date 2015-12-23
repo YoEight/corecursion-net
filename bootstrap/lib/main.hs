@@ -1,10 +1,13 @@
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 --------------------------------------------------------------------------------
 module Main where
 
 --------------------------------------------------------------------------------
-import Crypto.PasswordStore
+import GHC.Generics
+
+--------------------------------------------------------------------------------
 import Database.EventStore
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Text as T
@@ -15,7 +18,7 @@ import Options.Applicative
 import Text.Read
 
 --------------------------------------------------------------------------------
-data UsersEvent = UserCreated !T.Text !T.Text
+data UsersEvent = GoogleUserAdded !T.Text deriving Generic
 
 --------------------------------------------------------------------------------
 data Params =
@@ -25,7 +28,6 @@ data Params =
     , _storeAdminLogin :: !(Maybe B.ByteString)
     , _storeAdminPassw :: !(Maybe B.ByteString)
     , _storeUsername   :: !T.Text
-    , _storePassword   :: !B.ByteString
     }
 
 --------------------------------------------------------------------------------
@@ -36,7 +38,6 @@ parseParams = Params
               <*> parseAdminLogin
               <*> parseAdminPassword
               <*> parseUserLogin
-              <*> parseUserPassword
 
 --------------------------------------------------------------------------------
 parseIp :: Parser String
@@ -94,23 +95,18 @@ parseUserLogin = option (eitherReader (Right . T.pack)) m
         <> help "Author's login."
 
 --------------------------------------------------------------------------------
-parseUserPassword :: Parser B.ByteString
-parseUserPassword = option (eitherReader (Right . B.pack)) m
-  where
-    m =    long "passw"
-        <> metavar "PASSW"
-        <> help "Author's password."
-
---------------------------------------------------------------------------------
 instance ToJSON UsersEvent where
-    toJSON (UserCreated l p) =
-        object [ "login"    .= l
-               , "password" .= p
+    toJSON (GoogleUserAdded e) =
+        object [ "action" .= ("new.user" :: T.Text)
+               , "type"   .= ("google" :: T.Text)
+               , "email"  .= e
                ]
 
---------------------------------------------------------------------------------
-default_strength :: Int
-default_strength = 17
+    toEncoding (GoogleUserAdded e) =
+        pairs ( "action" .= ("new.user" :: T.Text)
+              <> "type"  .= ("google" :: T.Text)
+              <> "email" .= e
+              )
 
 --------------------------------------------------------------------------------
 main :: IO ()
@@ -126,8 +122,7 @@ main = do
     let creds = credentials <$> _storeAdminLogin <*> _storeAdminPassw
         setts = defaultSettings { s_credentials = creds }
 
-    passw <- fmap decodeUtf8 $ makePassword _storePassword default_strength
-    let e   = UserCreated _storeUsername passw
+    let e   = GoogleUserAdded _storeUsername
         evt = createEvent "user-created" Nothing $ withJson e
 
     conn <- connect setts _storeIp _storePort
