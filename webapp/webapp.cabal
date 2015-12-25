@@ -17,6 +17,7 @@ library
                      Aggregate.Authors
                      Aggregate.Post
                      Aggregate.Posts
+                     Aggregate.Stats
                      Foundation
                      Import
                      Import.NoFoundation
@@ -98,6 +99,8 @@ library
                  , pwstore-fast
                  , hashable
                  , multimap
+                 , network
+                 , wai
 
     default-language: Haskell2010
 

@@ -26,8 +26,9 @@ import Network.Wai.Middleware.RequestLogger (Destination (Logger),
 import System.Log.FastLogger                (defaultBufSize, newStdoutLoggerSet,
                                              toLogStr)
 
-import qualified Aggregate.Posts as Posts
 import qualified Aggregate.Authors as Authors
+import qualified Aggregate.Posts as Posts
+import qualified Aggregate.Stats as Stats
 
 -- Import all relevant handler modules here.
 -- Don't forget to add new modules to your cabal file!
@@ -64,6 +65,7 @@ makeFoundation appSettings = do
     conn       <- E.connect setts (storeIp conf) (storePort conf)
     appPosts   <- Posts.buildPosts conn
     appAuthors <- Authors.buildAuthors conn
+    appStats   <- Stats.buildStats conn
 
     -- Return the foundation
     return App {..}

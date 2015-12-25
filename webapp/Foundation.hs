@@ -4,6 +4,7 @@ import Import.NoFoundation hiding (hash)
 import Aggregate.Authors
 import Aggregate.Post
 import Aggregate.Posts
+import Aggregate.Stats
 import Text.Hamlet          (hamletFile)
 import Text.Jasmine         (minifym)
 import Yesod.Auth.GoogleEmail2
@@ -21,6 +22,7 @@ data App = App
     , appHttpManager :: Manager
     , appLogger      :: Logger
     , appPosts       :: Posts
+    , appStats       :: Stats
     , appAuthors     :: Authors
     }
 

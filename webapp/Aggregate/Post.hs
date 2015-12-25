@@ -2,7 +2,21 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 --------------------------------------------------------------------------------
-module Aggregate.Post where
+module Aggregate.Post
+    ( PostId
+    , Post
+    , PostSnapshot(..)
+    , PostCommand(..)
+    , postIdText
+    , buildPost
+    , newPost
+    , applyCommands
+    , snapshot
+    , snapshotSTM
+    , postId
+    , renderPost
+    , permanentLink
+    ) where
 
 ------------------------------------------------------------------------------
 import Control.Concurrent.STM

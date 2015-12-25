@@ -193,7 +193,6 @@ unpublishPost Posts{..} p = do
     writeEvent <- sendEvent _conn "posts" anyVersion saved_evt
     atomically $ do
         _  <- waitSTM writeEvent
-        m  <- readTVar _posts
         sp <- snapshotSTM p
         let lnk = permanentLink sp
             pid = hash lnk
