@@ -90,8 +90,14 @@ updatePostStats ip m
 
 --------------------------------------------------------------------------------
 postView :: Stats -> PostId -> String -> IO ()
-postView Stats{..} pid ip =
-    atomically $ modifyTVar _var (H.adjust (updatePostStats ip) pid)
+postView Stats{..} pid ip = do
+    dt <- getCurrentTime
+    let view_evt  = View dt ip
+        saved_evt = createEvent "user-view" Nothing $ withJson view_evt
+    writeView <- sendEvent _conn (postStream pid) anyVersion saved_evt
+    atomically $ do
+        _ <- waitSTM writeView
+        modifyTVar _var (H.adjust (updatePostStats ip) pid)
 
 --------------------------------------------------------------------------------
 postStats :: Stats -> PostId -> IO (Maybe PostStats)
