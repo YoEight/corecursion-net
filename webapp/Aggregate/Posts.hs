@@ -265,3 +265,7 @@ publishedPostSnapshot = snapshot . _post
 -----------------------------------------------------------------------------
 renderPublishedPost :: PublishedPost -> IO Html
 renderPublishedPost = renderPost . _post
+
+-----------------------------------------------------------------------------
+publishedPostId :: PublishedPost -> PostId
+publishedPostId = postId . _post

@@ -9,6 +9,7 @@ import           Text.Julius
 --------------------------------------------------------------------------------
 import Aggregate.Post
 import Aggregate.Posts
+import Aggregate.Stats
 import Handler.Common
 import Import hiding (parseDate)
 
@@ -213,3 +214,15 @@ postAdminAboutR = do
     let c = maybe "" (T.replace "\r\n" "\n") cm
     setAboutContent c
     sendResponseStatus status204 ()
+
+--------------------------------------------------------------------------------
+getAdminStatsR :: Handler Html
+getAdminStatsR = do
+    app  <- getYesod
+    ps   <- publishedPosts
+    rows <- for ps $ \p -> liftIO $ do
+        let postid = publishedPostId p
+        sp    <- publishedPostSnapshot p
+        stats <- postStats (appStats app) postid
+        return (sp, stats)
+    adminLayout $ $(widgetFile "admin-stats")

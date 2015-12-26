@@ -15,3 +15,4 @@
 /admin/post/unpublish/#PostId AdminUnpublishPostR PUT
 /admin/post/preview/#PostId AdminPreviewPostR GET
 /admin/about AdminAboutR GET POST
+/admin/stats AdminStatsR GET

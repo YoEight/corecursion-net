@@ -3,13 +3,17 @@
 --------------------------------------------------------------------------------
 module Aggregate.Stats
     ( Stats
+    , PostStats
     , buildStats
     , postView
     , postStats
+    , postViews
+    , postUniqueViews
     ) where
 
 --------------------------------------------------------------------------------
 import Control.Concurrent.STM
+import Data.Maybe
 import GHC.Generics
 import Prelude
 
@@ -100,5 +104,7 @@ postView Stats{..} pid ip = do
         modifyTVar _var (H.adjust (updatePostStats ip) pid)
 
 --------------------------------------------------------------------------------
-postStats :: Stats -> PostId -> IO (Maybe PostStats)
-postStats Stats{..} pid = fmap (H.lookup pid) $ readTVarIO _var
+postStats :: Stats -> PostId -> IO PostStats
+postStats Stats{..} pid = atomically $ do
+    m <- readTVar _var
+    return $ fromMaybe emptyPostStats $ H.lookup pid m

@@ -1,0 +1,7 @@
+<h1>Statistics
+<div .list-group>
+  $forall (sp, s) <- rows
+    <span .list-group-item>
+      #{ postTitle sp }
+      <span .label .label-default>
+        #{ postViews s } (#{ postUniqueViews s })

@@ -23,6 +23,8 @@ $newline never
             <a href="@{AdminCreatePostR}">Create post</a>
           <li>
             <a href="@{AdminAboutR}">About page
+          <li>
+            <a href="@{AdminStatsR}">Stats
 
       <div id="page-content-wrapper">
         <div class="container-fluid">
