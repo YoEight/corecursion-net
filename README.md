@@ -12,12 +12,12 @@ The goal of this project is to provide RealWorld yet simple [Yesod](http://www.y
 Project layout
 --------------
 
-1. boostrap: a command-line utility that initialize the  [EventStore](https://geteventstore.com/) database. Currently, it allows to create an author user.
-2. webapp: the main Yesod baked, web application.
+1. boostrap: a command-line utility that initializes a  [EventStore](https://geteventstore.com/) database. Currently, it only creates an author user.
+2. webapp: the main Yesod web application.
 
 Requirements
 ------------
-Normally, this code *should* work on any OS supported by GHC. Nonetheless, the website runs on Linux distro.
+Normally, this code *should* work on any OS supported by GHC. Nonetheless, the website runs on a Linux distro.
 
 The webapp uses an [EventStore](https://geteventstore.com/) database. Any version greater or equal to 3.0.0 would work.
 
@@ -58,13 +58,12 @@ You could either call `bootstrap` directly (where `stack` puts binaries which de
 $ ./bootstrap
 Usage: bootstrap [--ip IP] [--port PORT] [-l|--store-login STORE_LOGIN]
                  [-p|--store-passw STORE_PASSW] --username USERNAME
-                 --passw PASSW
   Initialize corecursion.net database.
 ```
 
-The simplest usage would be to declare `username` and `passw` parameters.
+The simplest usage would be to declare `username`.
 ```
-$ ./bootstrap --username author --passw secret
+$ ./bootstrap --username author
 ```
 
 or `stack` version:
