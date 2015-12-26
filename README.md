@@ -69,7 +69,7 @@ $ ./bootstrap --username author
 or `stack` version:
 
 ```
-$ stack exec -- bootstrap --username author --passw secret
+$ stack exec -- bootstrap --username author
 ```
 
 Notes
