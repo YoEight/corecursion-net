@@ -55,7 +55,7 @@ $ stack build bootstrap
 You could either call `bootstrap` directly (where `stack` puts binaries which depends on your setup) or use `stack` itself.
 
 ```
-$ ./bootstrap
+$ ./bootstrap --help
 bootstrap - Operates on corecursion.net database.
 
 Usage: bootstrap [--ip IP] [--port PORT] [-l|--store-login STORE_LOGIN]
