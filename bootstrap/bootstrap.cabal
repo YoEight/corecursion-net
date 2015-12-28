@@ -62,9 +62,9 @@ executable bootstrap
                        aeson,
                        text,
                        time,
-                       pwstore-fast,
                        bytestring,
-                       optparse-applicative
+                       optparse-applicative,
+                       attoparsec
 
   -- Directories containing source files.
   hs-source-dirs:      lib

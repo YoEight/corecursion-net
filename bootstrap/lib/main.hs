@@ -5,10 +5,12 @@
 module Main where
 
 --------------------------------------------------------------------------------
+import Data.Int
 import GHC.Generics
 
 --------------------------------------------------------------------------------
 import Database.EventStore
+import qualified Data.Attoparsec.Text as Atto
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8)
@@ -21,23 +23,38 @@ import Text.Read
 data UsersEvent = GoogleUserAdded !T.Text deriving Generic
 
 --------------------------------------------------------------------------------
-data Params =
-    Params
+data RunCmd =
+    RunCmd
     { _storeIp         :: !String
     , _storePort       :: !Int
     , _storeAdminLogin :: !(Maybe B.ByteString)
     , _storeAdminPassw :: !(Maybe B.ByteString)
-    , _storeUsername   :: !T.Text
+    , _cmd             :: !Cmd
     }
 
 --------------------------------------------------------------------------------
-parseParams :: Parser Params
-parseParams = Params
-              <$> parseIp
-              <*> parsePort
-              <*> parseAdminLogin
-              <*> parseAdminPassword
-              <*> parseUserLogin
+data Cmd
+    = CreateUserCmd CreateUser
+    | SetMaxAgeCmd SetMaxAge
+
+--------------------------------------------------------------------------------
+parseCmd :: Parser RunCmd
+parseCmd = RunCmd
+           <$> parseIp
+           <*> parsePort
+           <*> parseAdminLogin
+           <*> parseAdminPassword
+           <*> subparser (createUserCmd <> setMaxAgeCmd)
+
+--------------------------------------------------------------------------------
+newtype CreateUser = CreateUser { _username :: T.Text }
+
+--------------------------------------------------------------------------------
+createUserCmd :: Mod CommandFields Cmd
+createUserCmd = command "useradd" (info parser desc)
+  where
+    parser = fmap (CreateUserCmd . CreateUser) parseUserLogin
+    desc   = progDesc "Add a new author user."
 
 --------------------------------------------------------------------------------
 parseIp :: Parser String
@@ -109,23 +126,110 @@ instance ToJSON UsersEvent where
               )
 
 --------------------------------------------------------------------------------
-main :: IO ()
-main = do
-    let i = info parseParams
-            ( fullDesc
-              <> progDesc "Initialize corecursion.net database."
-              <> header "bootstrap - add author to corecursion.net."
-            )
+data TimePart
+    = Days Int64
+    | Hours Int64
+    | Mins Int64
+    | Secs Int64
+    deriving Show
 
-    Params{..} <- execParser i
+--------------------------------------------------------------------------------
+data SetMaxAge =
+    SetMaxAge
+    { _setMaxStream :: !T.Text
+    , _setMaxPart   :: !TimePart
+    }
 
+--------------------------------------------------------------------------------
+setMaxAgeCmd :: Mod CommandFields Cmd
+setMaxAgeCmd = command "maxage" (info parser desc)
+  where
+    parser =
+        fmap SetMaxAgeCmd $
+            SetMaxAge
+            <$> parseSetMaxStream
+            <*> parseSetMaxPart
+    desc = progDesc "Set stream $maxAge property"
+
+--------------------------------------------------------------------------------
+parseSetMaxStream :: Parser T.Text
+parseSetMaxStream = fmap T.pack $ strOption m
+  where
+    m =    short 's'
+        <> long "stream"
+        <> metavar "STREAM"
+        <> help "An event stream."
+
+--------------------------------------------------------------------------------
+parseSetMaxPart :: Parser TimePart
+parseSetMaxPart = option (eitherReader go) m
+  where
+    m =    long "time"
+        <> metavar "TIME"
+        <> help "Maximum time a stream should keep its events."
+
+    go i = Atto.parseOnly parseTimePart (T.pack i)
+
+--------------------------------------------------------------------------------
+parsePart :: T.Text -> Atto.Parser Int64
+parsePart p = do
+    _ <- Atto.string p
+    _ <- Atto.char '='
+    Atto.decimal
+
+--------------------------------------------------------------------------------
+parseDays :: Atto.Parser TimePart
+parseDays = fmap Days $ parsePart "days"
+
+--------------------------------------------------------------------------------
+parseHours :: Atto.Parser TimePart
+parseHours = fmap Hours $ parsePart "hours"
+
+--------------------------------------------------------------------------------
+parseMins :: Atto.Parser TimePart
+parseMins = fmap Mins $ parsePart "mins"
+
+--------------------------------------------------------------------------------
+parseSecs :: Atto.Parser TimePart
+parseSecs = fmap Secs $ parsePart "secs"
+
+--------------------------------------------------------------------------------
+parseTimePart :: Atto.Parser TimePart
+parseTimePart = parseDays <|> parseHours <|> parseMins
+
+--------------------------------------------------------------------------------
+executeCmd :: RunCmd -> IO ()
+executeCmd RunCmd{..} = do
     let creds = credentials <$> _storeAdminLogin <*> _storeAdminPassw
         setts = defaultSettings { s_credentials = creds }
 
-    let e   = GoogleUserAdded _storeUsername
-        evt = createEvent "user-created" Nothing $ withJson e
-
     conn <- connect setts _storeIp _storePort
-    act  <- sendEvent conn "authors" anyVersion evt
-    _    <- wait act
-    return ()
+    case _cmd of
+        CreateUserCmd CreateUser{..} -> do
+            let e   = GoogleUserAdded _username
+                evt = createEvent "user-created" Nothing $ withJson e
+            act <- sendEvent conn "authors" anyVersion evt
+            _   <- wait act
+            return ()
+        SetMaxAgeCmd SetMaxAge{..} -> do
+            let span =
+                    case _setMaxPart of
+                        Days i  -> timeSpanFromDays $ realToFrac i
+                        Hours i -> timeSpanFromHours $ realToFrac i
+                        Mins i  -> timeSpanFromMinutes $ realToFrac i
+                        Secs i  -> timeSpanFromSeconds $ realToFrac i
+
+                meta = buildStreamMetadata (setMaxAge span)
+            _ <- setStreamMetadata conn _setMaxStream anyVersion meta >>= wait
+            return ()
+
+--------------------------------------------------------------------------------
+main :: IO ()
+main = do
+    let i = info (helper <*> parseCmd)
+            ( fullDesc
+              <> progDesc "Initialize corecursion.net database."
+              <> header "bootstrap - Operates on corecursion.net database."
+            )
+
+    execParser i >>= executeCmd

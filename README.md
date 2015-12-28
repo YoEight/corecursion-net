@@ -56,20 +56,36 @@ You could either call `bootstrap` directly (where `stack` puts binaries which de
 
 ```
 $ ./bootstrap
+bootstrap - Operates on corecursion.net database.
+
 Usage: bootstrap [--ip IP] [--port PORT] [-l|--store-login STORE_LOGIN]
-                 [-p|--store-passw STORE_PASSW] --username USERNAME
+                 [-p|--store-passw STORE_PASSW] COMMAND
   Initialize corecursion.net database.
+
+Available options:
+  -h,--help                Show this help text
+  --ip IP                  EventStore's IP address. (default: "127.0.0.1")
+  --port PORT              EventStore's port. (default: 1113)
+  -l,--store-login STORE_LOGIN
+                           Store user login. (default: No admin login used.)
+  -p,--store-passw STORE_PASSW
+                           Store user
+                           password. (default: No admin password used.)
+
+Available commands:
+  useradd                  Add a new author user.
+  maxage                   Set stream $maxAge property
 ```
 
-The simplest usage would be to declare `username`.
+For example, to add an author user:
 ```
-$ ./bootstrap --username author
+$ ./bootstrap useradd --username author@email.com
 ```
 
 or `stack` version:
 
 ```
-$ stack exec -- bootstrap --username author
+$ stack exec -- bootstrap useradd --username author@email.com
 ```
 
 Notes

@@ -23,8 +23,8 @@ import Network.Wai.Middleware.RequestLogger (Destination (Logger),
                                              IPAddrSource (..),
                                              OutputFormat (..), destination,
                                              mkRequestLogger, outputFormat)
-import System.Log.FastLogger                (defaultBufSize, newStdoutLoggerSet,
-                                             toLogStr)
+import System.Log.FastLogger                (defaultBufSize, newFileLoggerSet,
+                                             toLogStr, pushLogStrLn, flushLogStr)
 
 import qualified Aggregate.Authors as Authors
 import qualified Aggregate.Posts as Posts
@@ -42,6 +42,10 @@ import Handler.Post
 -- comments there for more details.
 mkYesodDispatch "App" resourcesApp
 
+initLog logger str = pushLogStrLn (loggerSet logger) str
+
+flushInitLog logger = flushLogStr (loggerSet logger)
+
 -- | This function allocates resources (such as a database connection pool),
 -- performs initialization and return a foundation datatype value. This is also
 -- the place to put your migrate statements to have automatic database
@@ -51,7 +55,7 @@ makeFoundation appSettings = do
     -- Some basic initializations: HTTP connection manager, logger, and static
     -- subsite.
     appHttpManager <- newManager
-    appLogger <- newStdoutLoggerSet defaultBufSize >>= makeYesodLogger
+    appLogger <- newFileLoggerSet defaultBufSize "web.log" >>= makeYesodLogger
     appStatic <-
         (if appMutableStatic appSettings then staticDevel else static)
         (appStaticDir appSettings)
@@ -63,10 +67,18 @@ makeFoundation appSettings = do
                 , E.s_retry       = E.keepRetrying
                 }
     conn       <- E.connect setts (storeIp conf) (storePort conf)
+    initLog appLogger "Initiated EventStore connection"
+    initLog appLogger "Start building Posts aggregate…"
     appPosts   <- Posts.buildPosts conn
+    initLog appLogger "Posts aggregate built"
+    initLog appLogger "Start building Authors aggregate…"
     appAuthors <- Authors.buildAuthors conn
+    initLog appLogger "Authors aggregate built"
+    initLog appLogger "Start building Stats aggregate…"
     appStats   <- Stats.buildStats conn
-
+    initLog appLogger "Stats aggregate built"
+    initLog appLogger "Application instanciated successfully"
+    flushInitLog appLogger
     -- Return the foundation
     return App {..}
 
