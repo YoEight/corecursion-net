@@ -2,7 +2,7 @@
 module Handler.Common where
 
 --------------------------------------------------------------------------------
-import Data.Foldable (traverse_)
+import Data.Foldable (for_)
 
 --------------------------------------------------------------------------------
 import Data.FileEmbed (embedFile)
@@ -29,7 +29,9 @@ executePostCommands postid cmds = do
     app <- getYesod
     liftIO $ do
         pm <- lookupPost (appPosts app) postid
-        traverse_ (\p -> applyCommands p cmds) pm
+        for_ pm $ \p -> do
+            applyCommands p cmds
+            refreshHtmlIfPublished (appPosts app) p
 
 -----------------------------------------------------------------------------
 getPost :: PostId -> Handler (Maybe Post)

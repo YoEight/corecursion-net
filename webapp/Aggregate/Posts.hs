@@ -33,9 +33,10 @@ import Render.Html
 --   Markdown format has been rendered in HTML.
 data PublishedPost =
     PublishedPost
-    { _postDate  :: !UTCTime
+    { postDate  :: !UTCTime
     , _post      :: !Post
-    , _postLink  :: !Text -- permanent link.
+    , postLink  :: !Text -- permanent link.
+    , postHtml   :: !Html
     }
 
 --------------------------------------------------------------------------------
@@ -115,7 +116,8 @@ buildPosts conn = do
            sp <- snapshot p
            let tags  = postTags sp
                lnk   = permanentLink sp
-               ppost = PublishedPost date p (permanentLink sp)
+               html  = markdownToHtml $ postContent sp
+               ppost = PublishedPost date p (permanentLink sp) html
                pid   = hash lnk
                ts    = foldl (\m t -> S.insert t pid m) (_cTagged s) tags
                s'    = s { _cPubs   = I.insert pid ppost $ _cPubs s
@@ -160,12 +162,13 @@ createPost Posts{..} title content summary tags = do
 publishPost :: Posts -> Post -> Maybe UTCTime -> IO ()
 publishPost Posts{..} p forcedDate = do
     curDate <- getCurrentTime
-    sp <- snapshot p
-    let date = fromMaybe curDate forcedDate
+    sp      <- snapshot p
+    let date      = fromMaybe curDate forcedDate
         tags      = postTags sp
-        pub       = PublishedPost date p (permanentLink sp)
+        html      = markdownToHtml $ postContent sp
+        pub       = PublishedPost date p (permanentLink sp) html
         pub_evt   = PostPublished (postId p)
-        pid       = hash $ _postLink pub
+        pid       = hash $ postLink pub
         saved_evt = createEvent "post-published" Nothing $
                     withJsonAndMetadata pub_evt date
 
@@ -217,7 +220,7 @@ publishPredicate Posts{..} = atomically $ do
 
 ------------------------------------------------------------------------------
 comparePubs :: PublishedPost -> PublishedPost -> Ordering
-comparePubs l r = compare (_postDate l) (_postDate r)
+comparePubs l r = compare (postDate l) (postDate r)
 
 -----------------------------------------------------------------------------
 posts :: Posts -> IO [(PostId, Post)]
@@ -263,9 +266,15 @@ publishedPostSnapshot :: PublishedPost -> IO PostSnapshot
 publishedPostSnapshot = snapshot . _post
 
 -----------------------------------------------------------------------------
-renderPublishedPost :: PublishedPost -> IO Html
-renderPublishedPost = renderPost . _post
-
------------------------------------------------------------------------------
 publishedPostId :: PublishedPost -> PostId
 publishedPostId = postId . _post
+
+-----------------------------------------------------------------------------
+refreshHtmlIfPublished :: Posts -> Post -> IO ()
+refreshHtmlIfPublished Posts{..} p = atomically $ do
+    sp <- snapshotSTM p
+    let pid = hash $ permanentLink sp
+    modifyTVar _pubs $ \ps ->
+        let new_html        = markdownToHtml $ postContent sp
+            upd_content pub = pub { postHtml = new_html } in
+        I.adjust upd_content pid ps

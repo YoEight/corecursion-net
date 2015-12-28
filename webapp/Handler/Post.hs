@@ -22,8 +22,7 @@ getPostR pid = do
     case pm of
         Nothing -> notFound
         Just p  -> defaultLayout $ do
-            sp        <- liftIO $ publishedPostSnapshot p
-            post_html <- liftIO $ renderPublishedPost p
+            sp <- liftIO $ publishedPostSnapshot p
             let postid = publishedPostId p
                 ip     = showAddr $ remoteHost req
             liftIO $ postView stats postid ip

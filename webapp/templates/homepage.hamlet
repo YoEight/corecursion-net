@@ -2,11 +2,11 @@
   <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
     $forall (sp, p) <- zip snapshots pubs
       <div .post-preview>
-        <a href=@{PostR $ _postLink p}>
+        <a href=@{PostR $ postLink p}>
           <h2 .post-title>
             #{ postTitle sp }
             <small>
-              #{ showDate $ _postDate p }
+              #{ showDate $ postDate p }
           <h3 .post-subtitle>#{ postSummary sp }
         <div .post-meta>
           $forall tag <- postTags sp

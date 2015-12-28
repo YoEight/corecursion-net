@@ -2,6 +2,6 @@
   <h1>
     #{ postTitle sp }
     <small>
-      #{ showDate $ _postDate p }
+      #{ showDate $ postDate p }
   <div .post-content>
-    ^{ post_html }
+    ^{ postHtml p }
