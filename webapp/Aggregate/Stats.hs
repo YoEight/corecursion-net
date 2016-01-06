@@ -101,7 +101,8 @@ postView Stats{..} pid ip = do
     writeView <- sendEvent _conn (postStream pid) anyVersion saved_evt
     atomically $ do
         _ <- waitSTM writeView
-        modifyTVar _var (H.adjust (updatePostStats ip) pid)
+        modifyTVar _var $
+            H.insertWith (\_ -> updatePostStats ip) pid emptyPostStats
 
 --------------------------------------------------------------------------------
 postStats :: Stats -> PostId -> IO PostStats
